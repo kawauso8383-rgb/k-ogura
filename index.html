@@ -183,6 +183,19 @@
         <div class="form-group"><label>朝のレギュラー</label><input type="number" step="any" id="m_sales_reg" class="nav-input" enterkeyhint="next"></div>
         <div class="form-group"><label>朝の軽油</label><input type="number" step="any" id="m_sales_keiyu" class="nav-input" enterkeyhint="next"></div>
         <div class="form-group"><label>朝の灯油</label><input type="number" step="any" id="m_sales_toyu" class="nav-input" enterkeyhint="next"></div>
+
+        <!-- ★本日の入庫状況プルダウン -->
+        <div style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <label style="font-size: 0.85rem; font-weight: 600;">本日の入庫状況プルダウン</label>
+          <select class="full-width-select nav-input" id="today_lorry_status" onchange="toggleLorryInput('today')">
+            <option value="本日のローリー入庫問題ありません。">本日のローリー入庫問題ありません。</option>
+            <option value="manual">手打ち入力 (プルダウン以外)</option>
+          </select>
+          <div id="today_lorry_manual_box" class="hidden" style="margin-top: 8px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub);">入庫状況 (自由入力)</label>
+            <input type="text" class="full-width-input nav-input" id="today_lorry_manual" placeholder="例：本日のローリー入庫1時間遅れあり">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -465,8 +478,13 @@
     }
 
     function toggleLorryInput(type) {
-      const sel = document.getElementById("tom_lorry_status").value;
-      document.getElementById("tom_lorry_manual_box").classList.toggle("hidden", sel !== "manual");
+      if (type === 'today') {
+        const sel = document.getElementById("today_lorry_status").value;
+        document.getElementById("today_lorry_manual_box").classList.toggle("hidden", sel !== "manual");
+      } else {
+        const sel = document.getElementById("tom_lorry_status").value;
+        document.getElementById("tom_lorry_manual_box").classList.toggle("hidden", sel !== "manual");
+      }
       refreshNavInputs();
     }
 
@@ -652,6 +670,9 @@
       const rawOther = document.getElementById("other_manual").value.trim();
       const rawMemo = document.getElementById("memo").value.trim();
 
+      const todayLorrySel = document.getElementById("today_lorry_status").value;
+      const todayLorryVal = todayLorrySel === 'manual' ? (document.getElementById("today_lorry_manual").value.trim() || "本日のローリー入庫問題ありません。") : todayLorrySel;
+
       const tomLorrySel = document.getElementById("tom_lorry_status").value;
       const tomLorryVal = tomLorrySel === 'manual' ? (document.getElementById("tom_lorry_manual").value.trim() || "明日のローリー入庫問題ありません。") : tomLorrySel;
 
@@ -675,7 +696,7 @@
         stock_keiyu: finalStockKeiyuL,
         stock_toyu: finalStockToyuL,
         m_sales_hiok: v('m_sales_hiok'), m_sales_reg: v('m_sales_reg'), m_sales_keiyu: v('m_sales_keiyu'), m_sales_toyu: v('m_sales_toyu'),
-        today_lorry_status: "",
+        today_lorry_status: todayLorryVal,
         prev_hiok: prevHiok, prev_reg: prevReg, prev_keiyu: prevKeiyu, prev_toyu: prevToyu,
         cum_hiok: v('cum_hiok'), cum_reg: v('cum_reg'), cum_keiyu: v('cum_keiyu'), cum_toyu: v('cum_toyu'),
         cum_oil: v('cum_oil'), cum_wash: v('cum_wash'), other_manual: rawOther,
@@ -735,7 +756,6 @@
 
       let lineText = "";
       if (currentTab === '8h') {
-        // 小倉SS：本日入荷予定行は除外してシンプルに出力
         lineText = 
 `${storeName}
 
@@ -752,7 +772,9 @@
 朝のハイオク・：${toKlFormatted(v('m_sales_hiok'))}
 朝のレギュラー：${toKlFormatted(v('m_sales_reg'))}
 朝の軽油・・・：${toKlFormatted(v('m_sales_keiyu'))}
-朝の灯油・・・：${toKlFormatted(v('m_sales_toyu'))}`;
+朝の灯油・・・：${toKlFormatted(v('m_sales_toyu'))}
+
+${todayLorryVal}`;
 
       } else if (currentTab === '15h') {
         lineText = `${storeName}\n\n${salesText}\n\n${stockText}\n\n明日のローリー\n${lorryText}\n\n${tomLorryVal}${memoPart}`;
@@ -791,6 +813,7 @@
         submitBtn.disabled = false;
 
         document.getElementById("reportForm").reset();
+        document.getElementById("today_lorry_manual_box").classList.add("hidden");
         document.getElementById("tom_lorry_manual_box").classList.add("hidden");
         setEarlyLorry(false);
         calcTotal();
